@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Experience Letter Maker — Vyro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.2/html2pdf.bundle.min.js"></script>
+<style>
+  :root{
+    --app-bg:#e9edf2; --panel:#fff; --ink:#1b2430; --ink-soft:#5b6675;
+    --line:#d7dde5; --line-soft:#e7ebf1; --primary:#5a2d8f; --primary-press:#48227a;
+    --ok:#127a4a; --err:#c0392b; --field:#f4f6f9;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{font-family:'Inter',system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:var(--app-bg);color:var(--ink);-webkit-font-smoothing:antialiased}
+  .topbar{display:flex;align-items:center;justify-content:space-between;padding:14px 22px;background:var(--panel);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:20}
+  .brand h1{font-size:17px;font-weight:700;margin:0;letter-spacing:-.01em}
+  .brand span{font-size:12.5px;color:var(--ink-soft)}
+  .layout{display:grid;grid-template-columns:minmax(340px,410px) 1fr;min-height:calc(100vh - 57px)}
+  .form{background:var(--panel);border-right:1px solid var(--line);padding:20px 22px 40px;overflow-y:auto;max-height:calc(100vh - 57px)}
+  .group{margin-bottom:22px}
+  .group>h2{font-size:12px;font-weight:600;color:var(--ink-soft);margin:0 0 12px;padding-bottom:7px;border-bottom:1px solid var(--line-soft)}
+  .field{margin-bottom:13px}
+  .field label{display:block;font-size:12.5px;font-weight:500;margin-bottom:5px;color:var(--ink)}
+  .field .hint{color:var(--ink-soft);font-weight:400}
+  input[type=text],input[type=email],input[type=date],textarea,select{width:100%;background:var(--field);border:1px solid var(--line);border-radius:8px;padding:9px 11px;font-size:13.5px;color:var(--ink);font-family:inherit;transition:border-color .12s,box-shadow .12s}
+  textarea{resize:vertical;min-height:70px;line-height:1.5}
+  input:focus,textarea:focus,select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(90,45,143,.14)}
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .preview{padding:26px;overflow:auto;max-height:calc(100vh - 57px);display:flex;flex-direction:column;align-items:center;gap:18px}
+  .actions{position:sticky;top:0;z-index:10;width:794px;max-width:100%;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+  button.btn{font-family:inherit;font-size:13.5px;font-weight:600;border-radius:9px;padding:10px 16px;cursor:pointer;border:1px solid transparent;transition:background .12s,border-color .12s}
+  .btn.primary{background:var(--primary);color:#fff}
+  .btn.primary:hover{background:var(--primary-press)}
+  .btn.ghost{background:var(--panel);color:var(--ink);border-color:var(--line)}
+  .btn.ghost:hover{border-color:#b9c2cf}
+  .btn:disabled{opacity:.55;cursor:not-allowed}
+  .status{font-size:13px;font-weight:500}
+  .status.ok{color:var(--ok)} .status.err{color:var(--err)} .status.busy{color:var(--ink-soft)}
+
+  /* ---- the letter paper: your real letterhead with text on top ---- */
+  .paper{position:relative;width:794px;height:1059px;background:#fff;box-shadow:0 6px 30px rgba(24,34,48,.16);overflow:hidden}
+  .paper .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .paper .content{position:absolute;top:150px;left:90px;right:90px;font-family:'Lato',Arial,sans-serif;color:#222;font-size:14.5px;line-height:1.75}
+  .paper .dated{text-align:center;font-weight:700;font-size:15px;color:#222;margin:52px 0 0}
+  .paper .twmic{text-align:center;color:var(--primary);font-weight:700;font-size:22px;letter-spacing:.4px;margin:34px 0 24px}
+  .paper .content p{margin:0 0 15px;text-align:justify}
+  .paper .content .rgd{margin-top:26px}
+  .paper .content .rgd b{color:#222}
+
+  @media (max-width:1000px){
+    .layout{grid-template-columns:1fr}
+    .form{max-height:none;border-right:none;border-bottom:1px solid var(--line)}
+    .preview{max-height:none}
+    .actions{width:100%}
+    .paper{width:100%;height:auto;aspect-ratio:1445/1928}
+    .paper .content{top:14%;left:11%;right:11%;font-size:1.9vw}
+    .paper .dated{font-size:2vw}
+    .paper .twmic{font-size:3vw}
+  }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">
+      <h1>Experience Letter Maker</h1>
+      <span>Vyro &middot; fill the blanks, preview, send</span>
+    </div>
+  </div>
+
+  <div class="layout">
+    <form class="form" id="form" autocomplete="off">
+      <div class="group">
+        <h2>Employee</h2>
+        <div class="row">
+          <div class="field">
+            <label>Title</label>
+            <select id="sal">
+              <option value="mr">Mr.</option>
+              <option value="ms">Ms.</option>
+              <option value="mrs">Mrs.</option>
+              <option value="mx">Mx.</option>
+            </select>
+          </div>
+          <div class="field">
+            <label>Full name</label>
+            <input type="text" id="fullName" placeholder="e.g. Owais Ahmed" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Position title</label>
+          <input type="text" id="position" placeholder="e.g. Software Engineer" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Date started</label>
+            <input type="date" id="start" />
+          </div>
+          <div class="field">
+            <label>Last date</label>
+            <input type="date" id="end" />
+          </div>
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Letter</h2>
+        <div class="field">
+          <label>Issue date <span class="hint">(the "Dated:" line)</span></label>
+          <input type="date" id="issue" />
+        </div>
+      </div>
+
+      <div class="group">
+        <h2>Send by email</h2>
+        <div class="field">
+          <label>Recipient email</label>
+          <input type="email" id="to" placeholder="employee@email.com" />
+        </div>
+        <div class="field">
+          <label>Email subject</label>
+          <input type="text" id="subject" placeholder="Your Experience Letter — Vyro" />
+        </div>
+        <div class="field">
+          <label>Email message</label>
+          <textarea id="body">Hi,
+
+Please find your experience letter attached.
+
+Regards,
+People Team, Vyro</textarea>
+        </div>
+      </div>
+    </form>
+
+    <div class="preview">
+      <div class="actions">
+        <button type="button" class="btn ghost" id="downloadBtn">Download PDF</button>
+        <button type="button" class="btn primary" id="sendBtn">Send via Gmail</button>
+        <span class="status" id="status"></span>
+      </div>
+      <div class="paper" id="paper">
+        <img class="bg" id="bg" src="letterhead.png" alt="" crossorigin="anonymous" />
+        <div class="content" id="content"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+const $ = (id)=>document.getElementById(id);
+
+function fmtDate(v){
+  if(!v) return "____";
+  const [y,m,d]=v.split("-").map(Number);
+  const months=["January","February","March","April","May","June","July","August","September","October","November","December"];
+  return `${d} ${months[m-1]} ${y}`;
+}
+const esc=(s)=>(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+
+function salWord(s){ return {mr:"Mr.",ms:"Ms.",mrs:"Mrs.",mx:"Mx."}[s]||"Mr."; }
+function pron(s){
+  const female=(s==="ms"||s==="mrs");
+  const they=(s==="mx");
+  if(they) return {subj:"they",Subj:"They",obj:"them",poss:"their",Poss:"Their"};
+  if(female) return {subj:"she",Subj:"She",obj:"her",poss:"her",Poss:"Her"};
+  return {subj:"he",Subj:"He",obj:"him",poss:"his",Poss:"His"};
+}
+function firstNameOf(full){ const t=(full||"").trim().split(/\s+/); return t[0]||"____"; }
+
+/* =============================================================
+   >>> EDIT YOUR LETTER TEMPLATE HERE <<<
+   This matches your Vyro template exactly. Change wording freely.
+   The blanks come from the form.
+   ============================================================= */
+function buildLetter(v){
+  const sal=salWord(v.sal), pr=pron(v.sal);
+  const fullName=esc(v.fullName)||"____";
+  const first=esc(firstNameOf(v.fullName));
+  const position=esc(v.position)||"____";
+
+  const para1=`This is to certify that <b>${sal} ${fullName}</b> was employed at Vyro Pvt Ltd. `
+    +`from <b>${v.start}</b> to <b>${v.end}</b>. During ${pr.poss} tenure, ${pr.subj} held the position of <b>${position}</b>.`;
+
+  const para2=`${sal} ${first} demonstrated a strong work ethic, dedication, and valuable contributions during `
+    +`${pr.poss} time with us. ${pr.Poss} commitment to excellence and professionalism significantly impacted the `
+    +`success of our projects and overall team dynamics.`;
+
+  const para3=`For any further inquiries regarding ${pr.poss} employment, please contact us at people@vyro.ai. `
+    +`We wish ${pr.obj} all the best in ${pr.poss} future endeavors and continued success in ${pr.poss} career.`;
+
+  return `
+    <div class="dated">Dated: ${fmtDate(v.issue)}</div>
+    <div class="twmic">TO WHOM IT MAY CONCERN</div>
+    <p>${para1}</p>
+    <p>${para2}</p>
+    <p>${para3}</p>
+    <div class="rgd">Regards,</div>
+    <div class="rgd" style="margin-top:14px"><b>People Team</b></div>
+    <div>Vyro</div>
+  `;
+}
+/* =========== END OF TEMPLATE =========== */
+
+function readForm(){
+  return {
+    sal:$("sal").value, fullName:$("fullName").value.trim(), position:$("position").value.trim(),
+    start:fmtDate($("start").value), end:fmtDate($("end").value), issue:$("issue").value
+  };
+}
+function render(){ $("content").innerHTML=buildLetter(readForm()); }
+
+function pdfWorker(){
+  const name=($("fullName").value.trim()||"Experience-Letter").replace(/\s+/g,"-");
+  const opt={
+    margin:0, filename:`Experience-Letter-${name}.pdf`,
+    image:{type:"jpeg",quality:0.98},
+    html2canvas:{scale:2,useCORS:true,backgroundColor:"#ffffff"},
+    jsPDF:{unit:"px",format:[794,1059],orientation:"portrait"}
+  };
+  return html2pdf().set(opt).from($("paper"));
+}
+function setStatus(kind,msg){ const s=$("status"); s.className="status "+kind; s.textContent=msg; }
+
+async function downloadPDF(){
+  setStatus("busy","Building PDF...");
+  try{ await pdfWorker().save(); setStatus("ok","Downloaded."); }
+  catch(e){ setStatus("err","Could not build PDF."); }
+}
+async function sendEmail(){
+  const to=$("to").value.trim();
+  if(!to){ setStatus("err","Enter a recipient email first."); return; }
+  if(!$("fullName").value.trim()){ setStatus("err","Enter the full name first."); return; }
+  $("sendBtn").disabled=true; $("downloadBtn").disabled=true;
+  setStatus("busy","Building PDF...");
+  try{
+    const dataUri=await pdfWorker().outputPdf("datauristring");
+    const base64=dataUri.split(",")[1];
+    const name=($("fullName").value.trim()||"Experience-Letter").replace(/\s+/g,"-");
+    setStatus("busy","Sending...");
+    const res=await fetch("/api/send",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({
+        to, employeeName:$("fullName").value.trim(),
+        subject:$("subject").value.trim(), message:$("body").value,
+        fileName:`Experience-Letter-${name}.pdf`, pdfBase64:base64
+      })
+    });
+    const out=await res.json().catch(()=>({}));
+    if(res.ok&&out.ok){ setStatus("ok","Sent to "+to); }
+    else { setStatus("err", out.error||"Send failed."); }
+  }catch(e){ setStatus("err","Send failed. Deploy on Vercel with Gmail set up first."); }
+  finally{ $("sendBtn").disabled=false; $("downloadBtn").disabled=false; }
+}
+
+$("form").addEventListener("input",render);
+$("downloadBtn").addEventListener("click",downloadPDF);
+$("sendBtn").addEventListener("click",sendEmail);
+(function init(){ $("issue").value=new Date().toISOString().slice(0,10); render(); })();
+</script>
+</body>
+</html>
